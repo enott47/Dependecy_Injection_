@@ -1,0 +1,187 @@
+﻿
+@{
+    ViewBag.Title = "AddPersonForm";
+}
+
+<script type="text/javascript">
+    $(document).ready(function () {
+
+        function updateMessages(id, status, text) {
+            let div = $(id);
+
+            if (status === 'success') {
+                div.removeClass("alert-danger");
+                div.addClass('alert-primary');
+            }
+            else if (status === 'error') {
+                div.removeClass("alert-primary");
+                div.addClass('alert-danger');
+            }
+            div.html(text);
+
+            div.show('slow');
+            setTimeout(function () {
+                div.hide('slow');
+
+            }, 5000);
+        }
+
+        function validateFirstName(firstName) {
+            if (firstName === null || firstName === undefined)
+                return false;
+
+            let len = firstName.length;
+            return len >= 2 && len <= 30;
+        }
+
+        function validateLastName(lastName) {
+            if (lastName === null || lastName === undefined)
+                return false;
+
+            let len = lastName.length;
+            return len >= 2 && len <= 50;
+        }
+
+        function isNumber(age) {
+            return !isNaN(age) && !isNaN(parseInt(age));
+        }
+
+        function validateEmail(email) {
+            if (email === null || email === undefined)
+                return false;
+
+            let len = email.length;
+
+
+
+            if (len < 4 && len > 50)
+                return false;
+
+            let metAt = false, metDot = false;
+
+            for (let i = 0; i < len; i++) {
+
+
+                if (email.charCodeAt(i) === 64)
+                    metAt = true;
+                if (email.charCodeAt(i) === 46)
+                    metDot = true;
+            }
+
+
+
+            return metAt && metDot;
+
+        }
+
+        function validateForm(firstName, lastName, age, email) {
+            let isFirstName = validateFirstName(firstName);
+            let isLastName = validateLastName(lastName);
+            let isAge = isNumber(age);
+            let isEmail = validateEmail(email);
+
+            //update messages
+            if (!isFirstName)
+                $('#firstNameMessages').html(`<h6 class = "error">Enter Valid First Name</h6>`)
+            else
+                $('#firstNameMessages').html('');
+
+            if (!isLastName)
+                $('#lastNameMessages').html(`<h6 class = "error">Enter Valid Last Name</h6>`)
+            else
+                $('#lastNameMessages').html('');
+
+
+            if (!isAge)
+                $('#ageMessages').html(`<h6 class = "error">Enter Valid Age</h6>`)
+            else
+                $('#ageMessages').html('');
+
+            if (!isEmail)
+                $('#emailMessages').html(`<h6 class = "error">Enter Valid Email</h6>`)
+            else
+                $('#emailMessages').html('');
+
+            return isFirstName && isLastName && isAge && isEmail;
+
+        }
+
+
+
+        $('#addPersonForm').submit(function (e) {
+            e.preventDefault();
+
+            let firstName = $('#firstName').val().trim();
+            let lastName = $('#lastName').val().trim();
+            let age = $('#age').val();
+            let email = $('#email').val().trim();
+
+            //console.log(`firstName = ${firstName}`)
+            //console.log(`lastName = ${lastName}`);
+            //console.log(`age = ${age}`);
+            //console.log(`email = ${email}`);
+
+            if (validateForm(firstName, lastName, age, email)) {
+                const postData = {
+                    ID: null,
+                    FirstName: firstName,
+                    LastName: lastName,
+                    Age: age,
+                    Email: email
+                };
+
+                $.post("/Person/SavePerson", postData, function (data) {
+                    // console.log(data);
+                    let info = JSON.parse(data);
+
+                    if (info.status === 'success') {
+                        updateMessages("#addPersonMessages", 'success', `data inserted sucessfully. ${info.rowsAffected} rows affected`);
+                        $('#addPersonForm').trigger('reset');
+                    }
+
+                    else if (info.status === 'error') {
+                        updateMessages("#addPersonMessages", 'error', `error appeared ${info.message}`);
+
+                    }
+
+                });
+            }
+        });
+
+    });
+</script>
+
+<div id="addPersonMessages" class="alert" role="alert" style="display:none">
+
+</div>
+
+<form id="addPersonForm">
+
+    <div class="mb-3">
+        <label for="firstName" class="form-label">First Name</label>
+        <input type="text" class="form-control" id="firstName" placeholder="enter first name">
+        <div id="firstNameMessages" class="form-text"></div>
+    </div>
+
+    <div class="mb-3">
+        <label for="lastName" class="form-label">Last Name</label>
+        <input type="text" class="form-control" id="lastName" placeholder="enter last name">
+        <div id="lastNameMessages" class="form-text"></div>
+    </div>
+
+    <div class="mb-3">
+        <label for="age" class="form-label">Age</label>
+        <input type="text" class="form-control" id="age" placeholder="enter age">
+        <div id="ageMessages" class="form-text"></div>
+    </div>
+
+    <div class="mb-3">
+        <label for="email" class="form-label">Email</label>
+        <input type="text" class="form-control" id="email" placeholder="enter email">
+        <div id="emailMessages" class="form-text"></div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Submit</button>
+</form>
+
+

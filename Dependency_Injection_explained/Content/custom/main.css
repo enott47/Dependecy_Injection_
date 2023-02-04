@@ -1,0 +1,17 @@
+﻿#welcomeDiv{
+    color:lightgray;
+    font-size:60px;
+    text-align:center;
+    font-weight: 900;
+    margin-top:150px;
+}
+
+.error{
+    color:red;
+}
+
+#users tbody tr:hover{
+    cursor:pointer;
+    background-color:lightgray;
+
+}

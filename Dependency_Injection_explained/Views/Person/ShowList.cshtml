@@ -1,0 +1,400 @@
+﻿
+@{
+    ViewBag.Title = "ShowList";
+}
+
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        fetchData();
+
+        function fetchData() {
+            $.post('/Person/GetAllPeople', function (data) {
+                //console.log(data);
+                let result = JSON.parse(data);
+                let template = ``;
+
+                result.data.forEach(item => {
+                    template += `<tr>`;
+                    template += `<td> ${item.ID} </td>`;
+                    template += `<td> ${item.FirstName} </td>`;
+                    template += `<td> ${item.LastName} </td>`;
+                    template += `<td> ${item.Age} </td>`;
+                    template += `<td> ${item.Email} </td>`;
+
+                })
+
+                $('#users tbody').html(template);
+
+            });
+        }
+
+        function updateMessages(id, status, text) {
+            let div = $(id);
+
+
+
+            if (status === 'success') {
+                div.removeClass('alert-danger');
+                div.addClass('alert-primary');
+            }
+            else if (status === 'error') {
+                div.removeClass('alert-primary');
+                div.addClass('alert-danger');
+            }
+
+
+            div.html(text);
+
+
+            div.show('slow');
+
+            setTimeout(function () {
+                div.hide('slow');
+            }, 5000);
+        }
+
+        function validateFirstName(firstName) {
+            if (firstName === undefined || firstName === null)
+                return false;
+
+
+
+            let len = firstName.length;
+            return len >= 2 && len <= 30;
+        }
+
+        function validateLastName(lastName) {
+            if (lastName === undefined || lastName === null)
+                return false;
+
+
+
+            let len = lastName.length;
+            return len >= 2 && len <= 50;
+        }
+
+        function isNumber(age) {
+            return !isNaN(age) && !isNaN(parseInt(age));
+        }
+
+        function validateEmail(email) {
+
+
+
+            if (email === undefined || email === null)
+                return false;
+
+
+
+
+            let len = email.length;
+
+
+
+            if (len < 4 || len > 50)
+                return false;
+
+
+
+            let metAt = false, metDot = false;
+
+
+
+            for (let i = 0; i < len; i++) {
+
+
+
+                if (email.charCodeAt(i) === 64)
+                    metAt = true;
+
+
+
+                if (email.charCodeAt(i) === 46)
+                    metDot = true;
+            }
+
+
+
+            return metAt && metDot;
+        }
+
+        function validateForm(firstName, lastName, age, email) {
+
+
+
+            let isFirstName = validateFirstName(firstName);
+            let isLastName = validateLastName(lastName);
+            let isAge = isNumber(age);
+            let isEmail = validateEmail(email);
+
+
+
+            //console.log(`isFirstName = ${isFirstName}`);
+            //console.log(`isLastName = ${isLastName}`);
+            //console.log(`isAge = ${isFirstName}`);
+            //console.log(`isEmail = ${isEmail}`);
+            // update messages
+
+
+
+            if (!isFirstName)
+                $('#firstNameMessages').html(`<h6 class="error"> plese enter valid First Name </h6>`);
+            else
+                $('#firstNameMessages').html(``);
+
+
+
+
+            if (!isLastName)
+                $('#lastNameMessages').html(`<h6 class="error"> plese enter valid Last Name </h6>`);
+            else
+                $('#lastNameMessages').html(``);
+
+
+
+            if (!isAge)
+                $('#ageMessages').html(`<h6 class="error"> plese enter valid Age </h6>`);
+            else
+                $('#ageMessages').html(``);
+
+
+
+            if (!isEmail)
+                $('#emailMessages').html(`<h6 class="error"> plese enter valid Email </h6>`);
+            else
+                $('#emailMessages').html(``);
+
+
+
+            // end update messages
+
+
+
+            return isFirstName && isLastName && isAge && isEmail;
+        }
+
+
+
+        function addPerson() {
+
+            let firstName = $('#firstName').val().trim();
+            let lastName = $('#lastName').val().trim();
+            let age = $('#age').val().trim();
+            let email = $('#email').val().trim();
+
+
+            if (validateForm(firstName, lastName, age, email)) {
+
+                const postData = {
+                    ID: null,
+                    FirstName: firstName,
+                    LastName: lastName,
+                    Age: parseInt(age),
+                    Email: email
+                };
+
+                $.post('/Person/SavePerson', postData, function (data) {
+                    //console.log(data);
+                    let info = JSON.parse(data);
+                    // console.log(info);
+                    if (info.status === 'success') {
+                        updateMessages('#personMessages', 'success', `data inserted successfuly.  ${info.rowsAffected}  rows affected`);
+                        $('#save_update_delete_form').trigger('reset');
+                        fetchData();
+                    }
+                    else if (info.status === 'error') {
+                        updateMessages('#personMessages', 'error', `error appeared: ${info.message}`);
+                    }
+                });
+
+            }
+        };
+
+        function UpdatePerson() {
+            let id = $('#ID').val();
+            let firstName = $('#firstName').val().trim();
+            let lastName = $('#lastName').val().trim();
+            let age = $('#age').val().trim();
+            let email = $('#email').val().trim();
+
+
+            if (validateForm(firstName, lastName, age, email)) {
+
+                const postData = {
+                    ID: id,
+                    FirstName: firstName,
+                    LastName: lastName,
+                    Age: parseInt(age),
+                    Email: email
+                };
+
+                $.post('/Person/UpdatePerson', postData, function (data) {
+                    //console.log(data);
+                    let info = JSON.parse(data);
+                    // console.log(info);
+                    if (info.status === 'success') {
+                        updateMessages('#personMessages', 'success', `data updated successfuly.  ${info.rowsAffected}  rows affected`);
+                       // $('#save_update_delete_form').trigger('reset');
+                        fetchData();
+                    }
+                    else if (info.status === 'error') {
+                        updateMessages('#personMessages', 'error', `error appeared: ${info.message}`);
+                    }
+                });
+
+            }
+        };
+
+        function deletePerson() {
+            let id = $('#ID').val();
+            if (id != undefined && id != null && id != '') {
+                if (confirm('Are You Sure?')) {
+                    $.post('/Person/DeletePerson', { personID: parseInt(id) }, function (data) {
+
+                        let info = JSON.parse(data);
+                        // console.log(info);
+                        if (info.status === 'success') {
+                            updateMessages('#personMessages', 'success', `person deleted successfuly. ${info.rowsAffected}  rows affected`);
+                            $('#save_update_delete_form').trigger('reset');
+                            fetchData();
+                        }
+                        else if (info.status === 'error') {
+                            updateMessages('#personMessages', 'error', `error appeared: ${info.message}`);
+                        }
+                    });
+                }
+            }
+        };
+
+        function clearPerson() {
+            $('#save_update_delete_form').trigger('reset');
+            $('#ID').val(null);
+        }
+
+        $('#save_update_delete_form').submit(function (e) {
+            e.preventDefault();
+
+
+            //let temp = $(document.activeElement).val();
+            //console.log(temp);
+
+            let cmd = $(document.activeElement).val();
+            switch (cmd) {
+                case 'save': {
+                    addPerson();
+                    break;
+                }
+                case 'update': {
+                    UpdatePerson();
+                    break;
+                }
+
+                case 'delete': {
+                    deletePerson();
+                    break;
+                }
+                case 'clear': {
+                    clearPerson();
+                    break;
+                }
+            }
+        });
+
+
+        //on table row click
+        $('#users tbody').on('click', 'tr' ,function() {
+            let id = $(this).find('td:eq(0)').text();
+            let firstName = $(this).find('td:eq(1)').text();
+            let lastName = $(this).find('td:eq(2)').text();
+            let age = $(this).find('td:eq(3)').text();
+            let email = $(this).find('td:eq(4)').text();
+
+            $('#ID').val(id);
+            $('#firstName').val(firstName);
+            $('#lastName').val(lastName);
+            $('#age').val(age);
+            $('#email').val(email);
+
+        })
+    });
+
+</script>
+
+<form id="save_update_delete_form">
+    <h2>Save or Update or delete</h2>
+    <div id="personMessages" class="alert" role="alert" style="display: none">  </div>
+
+
+    <div class="row mb-3">
+
+        <input type="hidden" id="ID" />
+
+        
+
+        <div class="col-md-3">
+            <label for="firstName" class="form-label">First Name</label>
+            <input type="text" class="form-control" id="firstName" placeholder="enter first name">
+            <div id="firstNameMessages" class="form-text"></div>
+        </div>
+
+
+        <div class="col-md-3">
+            <label for="lastName" class="form-label">Last Name</label>
+            <input type="text" class="form-control" id="lastName" placeholder="enter last name">
+            <div id="lastNameMessages" class="form-text"></div>
+        </div>
+
+
+        <div class="col-md-3">
+            <label for="age" class="form-label">Age</label>
+            <input type="text" class="form-control" id="age" placeholder="enter age">
+            <div id="ageMessages" class="form-text"></div>
+        </div>
+
+
+        <div class="col-md-3">
+            <label for="email" class="form-label">Email</label>
+            <input type="text" class="form-control" id="email" placeholder="enter email">
+            <div id="emailMessages" class="form-text"></div>
+        </div>
+
+
+    </div>
+
+
+
+    <div class="row mb-5">
+
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-success w-100" value="save"><i class="fa solid fa fa-database"></i> Save</button>
+        </div>
+
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-primary w-100" value="update"><i class="fa-duotone fa-pen-to-square"></i> update</button>
+        </div>
+
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-danger w-100" value="delete"><i class="fa-solid fa-trash-can-xmark"></i> Delete</button>
+        </div>
+        <div class="col-md-3">
+            <button type="submit" class="btn btn-info w-100" value="clear">Clear</button>
+        </div>
+    </div>
+
+
+</form>
+<table id="users" class="table">
+    <thead class="table-dark">
+        <tr>
+            <th>ID</th>
+            <th>First Name</th>
+            <th>Last Name</th>
+            <th>Age</th>
+            <th>Email</th>
+        </tr>
+    </thead>
+
+    <tbody>
+    </tbody>
+</table>
